@@ -5,6 +5,9 @@ import routes from './routes/index.js';
 const app = express();
 const port = 3000;
 
+// console.log('process.env.NODE_ENV : ' + (process.env.NODE_ENV || 'development'));
+// console.log('app.settings.NODE_ENV : ' + app.settings.NODE_ENV);
+
 app.use(express.json());
 app.use(express.urlencoded({extended: true}));
 app.use(express.json());

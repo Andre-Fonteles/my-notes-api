@@ -16,13 +16,16 @@ describe('Token/Login Route Test Set', () => {
   let user = null;
   mocha.beforeEach((next) => {
     user = new models.User('john', 'pass');
-    user = models.userDAO.insert(user);
-    next();
+    models.userDAO.insert(user, (newUser) => {
+      user = newUser;
+      next();
+    });
   });
 
   mocha.afterEach((next) => {
-    models.userDAO.delete(user);
-    next();
+    models.userDAO.delete(user, (deletedUser) => {
+      next();
+    });
   });
 
   it('/POST a user (login)', (done) => {

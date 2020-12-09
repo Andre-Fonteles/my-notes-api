@@ -15,14 +15,16 @@ const it = mocha.it;
 describe('Auth Route Test Set', () => {
   let user = null;
   mocha.beforeEach((next) => {
-    user = new models.User('john', 'pass');
-    user = models.userDAO.insert(user);
-    next();
+    models.userDAO.insert(new models.User('tester', 'tester-pass'), (newUser) => {
+      user = newUser;
+      next();
+    });
   });
 
   mocha.afterEach((next) => {
-    models.userDAO.delete(user);
-    next();
+    models.userDAO.delete(user, (deletedUser) => {
+      next();
+    });
   });
 
   it('/GET some resource from a user with no token', (done) => {

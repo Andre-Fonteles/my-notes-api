@@ -16,33 +16,32 @@ class UserDAO {
   }
 
   /**
-   * Retrieves all users from the database.
-   * @return {Array} users - An array containing all users.
+   * Callback for getting a note.
+   *
+   * @callback usercallback
+   * @param {User} user - The user read/created/updated or inserted or null if nothing happened.
    */
-  readAll() {
-    return this.users;
-  }
 
   /**
    * Retrieves the user with the username.
    * @param {string} username - The username of the user to be retrieved.
-   * @return {User} The user with id passed or null if no note exists.
+   * @param {notecallback} callback - callback function.
    */
-  read(username) {
+  read(username, callback) {
     let user = undefined;
     if (this.users[username] !== undefined) {
       user = this.users[username];
     }
 
-    return user;
+    callback(user);
   }
 
   /**
    * Deletes the user with the username.
    * @param {string} username - The username of the user to be deleted.
-   * @return {User} The user with username passed or null if no user exists.
+   * @param {notecallback} callback - callback function.
    */
-  delete(username) {
+  delete(username, callback) {
     const users = [];
     let user = null;
 
@@ -55,15 +54,15 @@ class UserDAO {
     });
     this.users = users;
 
-    return user;
+    callback(user);
   }
 
   /**
    * Updates a user having the username of the user passed according to the values of the latter.
    * @param {User} user - User containing the username and the new values.
-   * @return {User} The user with the updated values or null if the user doesn't exist.
+   * @param {notecallback} callback - callback function.
    */
-  update(user) {
+  update(user, callback) {
     let newUser = null;
 
     Object.values(this.users).forEach((value) => {
@@ -73,26 +72,34 @@ class UserDAO {
       }
     });
 
-    return newUser;
+    callback(newUser);
   }
 
   /**
    * Persists a user.
    * @param {User} user - User to be persisted.
-   * @return {User} The user persisted.
+   * @param {notecallback} callback - callback function.
    */
-  insert(user) {
+  insert(user, callback) {
     this.users[user.id] = user;
-    return new User(user.username, user.password);
+    callback(new User(user.username, user.password));
   }
+
+
+  /**
+   * Callback for operation.
+   *
+   * @callback booleancallback
+   * @param {boolean} bool - True if the operation has been successful.
+   */
 
   /**
    * Checks if the username and passwords match a user in the database.
    * @param {string} username - The username.
    * @param {string} password - The password.
-   * @return {boolean} true if the username and password match a user.
+   * @param {booleancallback} callback - callback function.
    */
-  checkCredentials(username, password) {
+  checkCredentials(username, password, callback) {
     let valid = false;
     Object.values(this.users).forEach((user) => {
       if (user.username == username && user.password == password) {
@@ -100,7 +107,7 @@ class UserDAO {
       }
     });
 
-    return valid;
+    callback(valid);
   }
 }
 

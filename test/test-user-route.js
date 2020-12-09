@@ -16,14 +16,17 @@ describe('User Route Test Set', () => {
   let user = null;
   let token = null;
   mocha.beforeEach((next) => {
-    user = models.userDAO.insert(new models.User('tester', 'tester-pass'));
-    token = models.tokenDAO.insert(models.Token.generateToken(user.username));
-    next();
+    models.userDAO.insert(new models.User('tester', 'tester-pass'), (newUser) => {
+      user = newUser;
+      token = models.tokenDAO.insert(models.Token.generateToken(user.username));
+      next();
+    });
   });
 
   mocha.after((next) => {
-    models.userDAO.delete(user);
-    next();
+    models.userDAO.delete(user, (deletedUser) => {
+      next();
+    });
   });
 
   it('/GET a user by username', (done) => {

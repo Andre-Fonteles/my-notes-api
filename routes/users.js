@@ -4,9 +4,10 @@ import express from 'express';
 const router = express();
 
 router.get('/:usersame', (req, res) => {
-  const user = models.userDAO.read(req.params.userId);
-  delete user.password;
-  res.send(models.userDAO.read(req.params.userId));
+  models.userDAO.read(req.params.userId, (user) => {
+    delete user.password;
+    res.send(user);
+  });
 });
 
 router.post('/', (req, res) => {
@@ -14,26 +15,32 @@ router.post('/', (req, res) => {
   const password = req.body.password;
 
   if (models.User.isValidUsername(username) && models.User.isValidPassword(password)) {
-    const user = models.userDAO.insert(new models.User(username, password));
-    res.send(user);
+    models.userDAO.insert(new models.User(username, password), (user) => {
+      res.send(user);
+    });
   } else {
     res.status(400).send('Invalid User');
   }
 });
 
 router.put('/:username', (req, res) => {
-  const username = req.params.username;
+  const username = req.body.username;
   const password = req.body.password;
-  let user = new models.User(username, password);
-  user = models.userDAO.update(user);
 
-  res.send(user);
+  if (models.User.isValidUsername(username) && models.User.isValidPassword(password)) {
+    models.userDAO.update(new models.User(username, password), (user) => {
+      res.send(user);
+    });
+  } else {
+    res.status(400).send('Invalid Input');
+  }
 });
 
 router.delete('/:username', (req, res) => {
   const username = req.params.username;
-  const user = models.userDAO.delete(username);
-  res.send(user);
+  models.userDAO.delete(username, (user) => {
+    res.send(user);
+  });
 });
 
 export default router;
