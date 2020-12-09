@@ -16,12 +16,19 @@ class TokenDAO {
   }
 
   /**
+   * Callback for operation.
+   *
+   * @callback booleancallback
+   * @param {boolean} bool - True if the operation has been successful.
+   */
+
+  /**
    * Checks whether the username & token combination are valid or not.
    * @param {string} username - The username of the user who holds the token.
    * @param {string} tokenHash - The token hash.
-   * @return {boolean} true if the user has this token, false otherwise.
+   * @param {booleancallback} callback - callback function.
    */
-  checkToken(username, tokenHash) {
+  checkToken(username, tokenHash, callback) {
     let auth = false;
     this.tokens.forEach( (token) => {
       if (token.username == username && token.hash == tokenHash) {
@@ -29,16 +36,23 @@ class TokenDAO {
       }
     });
 
-    return auth;
+    callback(auth);
   }
+
+  /**
+   * Callback for getting a note.
+   *
+   * @callback tokencallback
+   * @param {Token} token - The token read/created or null if nothing happened.
+   */
 
   /**
    * Deletes the token from a user.
    * @param {string} username - The username of the user who holds the token.
    * @param {string} tokenHash - The token hash.
-   * @return {boolean} true if the token has been successfuly deleted, false otherwise.
+   * @param {booleancallback} callback - callback function.
    */
-  delete(username, tokenHash) {
+  delete(username, tokenHash, callback) {
     const tokens = [];
     let deleted = false;
 
@@ -51,17 +65,17 @@ class TokenDAO {
     });
     this.tokens = tokens;
 
-    return deleted;
+    callback(deleted);
   }
 
   /**
    * Persists a token.
    * @param {Token} token - A new token to be registered.
-   * @return {Token} the token, if successfully created.
+   * @param {tokencallback} callback - callback function.
    */
-  insert(token) {
+  insert(token, callback) {
     this.tokens.push(token);
-    return token;
+    callback(token);
   }
 }
 

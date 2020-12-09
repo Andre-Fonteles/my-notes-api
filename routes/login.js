@@ -9,12 +9,13 @@ router.post('/', (req, res) => {
 
   models.userDAO.checkCredentials(username, password, (success) => {
     if (success) {
-      const token = models.tokenDAO.insert(models.Token.generateToken(username));
-      if (token) {
-        res.send(token);
-      } else {
-        res.status(500).send('Internal server error');
-      }
+      models.tokenDAO.insert(models.Token.generateToken(username), (token) => {
+        if (token) {
+          res.send(token);
+        } else {
+          res.status(500).send('Internal server error');
+        }
+      });
     } else {
       res.status(401).send('Invalid credentials');
     }
@@ -24,8 +25,9 @@ router.post('/', (req, res) => {
 router.delete('/', (req, res) => {
   const token = req.headers['authorization'];
   const username = req.body.username;
-  const response = models.tokenDAO.delete(username, token);
-  res.send(response);
+  models.tokenDAO.delete(username, token, (success) => {
+    res.send(success);
+  });
 });
 
 export default router;

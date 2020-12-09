@@ -53,16 +53,17 @@ describe('Token/Login Route Test Set', () => {
   });
 
   it('/DELETE token (logout)', (done) => {
-    const token = models.tokenDAO.insert(models.Token.generateToken(user.username));
-    chai.request(app)
-        .delete('/login')
-        .send(user)
-        .set('Authorization', token.hash)
-        .end((err, res) => {
-          res.should.have.status(200);
-          res.body.should.be.a('boolean').eql(true);
-          done();
-        });
+    models.tokenDAO.insert(models.Token.generateToken(user.username), (token) => {
+      chai.request(app)
+          .delete('/login')
+          .send(user)
+          .set('Authorization', token.hash)
+          .end((err, res) => {
+            res.should.have.status(200);
+            res.body.should.be.a('boolean').eql(true);
+            done();
+          });
+    });
   });
 
   it('/DELETE non-exiting token', (done) => {

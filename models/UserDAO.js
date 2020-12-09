@@ -19,7 +19,7 @@ class UserDAO {
    * Callback for getting a note.
    *
    * @callback usercallback
-   * @param {User} user - The user read/created/updated or inserted or null if nothing happened.
+   * @param {User} user - The user read/created/updated or null if nothing happened.
    */
 
   /**

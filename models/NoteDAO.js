@@ -41,7 +41,7 @@ class NoteDAO {
    * Callback for getting a note.
    *
    * @callback notecallback
-   * @param {Note} note - The note read/created/updated or inserted or null if nothing happened.
+   * @param {Note} note - The note read/created/updated or null if nothing happened.
    */
 
   /**

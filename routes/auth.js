@@ -7,11 +7,13 @@ router.all('/:username', (req, res, next) => {
   const tokenHash = req.headers['authorization'];
   const username = req.params.username;
 
-  if (models.tokenDAO.checkToken(username, tokenHash)) {
-    next();
-  } else {
-    res.status(401).send('Unauthorized');
-  }
+  models.tokenDAO.checkToken(username, tokenHash, (good) => {
+    if (good) {
+      next();
+    } else {
+      res.status(401).send('Unauthorized');
+    }
+  });
 });
 
 export default router;

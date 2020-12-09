@@ -18,8 +18,10 @@ describe('User Route Test Set', () => {
   mocha.beforeEach((next) => {
     models.userDAO.insert(new models.User('tester', 'tester-pass'), (newUser) => {
       user = newUser;
-      token = models.tokenDAO.insert(models.Token.generateToken(user.username));
-      next();
+      models.tokenDAO.insert(models.Token.generateToken(user.username), (newToken) => {
+        token = newToken;
+        next();
+      });
     });
   });
 
