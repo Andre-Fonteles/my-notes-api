@@ -58,18 +58,21 @@ describe('User Route Test Set', () => {
   });
 
   it('/PUT (update) a user', (done) => {
-    user.password = 'New password';
+    const userToUpdate = new models.User(user.username, 'New password');
 
     chai.request(app)
         .put(`/users/${user.username}`)
         .set('Authorization', token.hash)
-        .send(user)
+        .send(userToUpdate)
         .end((err, res) => {
           res.should.have.status(200);
           res.should.be.an('object');
-          res.body.should.have.property('password').eql(user.password);
+          res.body.should.have.property('password');
           res.body.should.have.property('username').eql(user.username);
-          done();
+          models.userDAO.checkCredentials(userToUpdate.username, userToUpdate.password, (result) => {
+            chai.expect(result).to.eql(true);
+            done();
+          });
         });
   });
 
@@ -80,7 +83,7 @@ describe('User Route Test Set', () => {
         .end((err, res) => {
           res.should.have.status(200);
           res.should.be.an('object');
-          res.body.should.have.property('password').eql(user.password);
+          res.body.should.have.property('password');
           done();
         });
   });

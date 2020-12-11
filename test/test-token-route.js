@@ -17,13 +17,12 @@ describe('Token/Login Route Test Set', () => {
   mocha.beforeEach((next) => {
     user = new models.User('john', 'pass');
     models.userDAO.insert(user, (newUser) => {
-      user = newUser;
       next();
     });
   });
 
   mocha.afterEach((next) => {
-    models.userDAO.delete(user, (deletedUser) => {
+    models.userDAO.delete(user.username, (deletedUser) => {
       next();
     });
   });

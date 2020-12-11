@@ -1,9 +1,12 @@
 import User from './User.js';
+import bcrypt from 'bcrypt';
 
 /**
  * Represents an interface the handles persistency of a User.
  */
 class UserDAO {
+  static SALT_ROUNDS = 10;
+
   /**
    * Creates a UserDAO.
    * @constructor
@@ -68,11 +71,16 @@ class UserDAO {
     Object.values(this.users).forEach((value) => {
       if (user.username == value.username) {
         newUser = value;
-        newUser.password = user.password;
+        // Generate salt and hash password
+        bcrypt.hash(user.password, UserDAO.SALT_ROUNDS, (err, hashPassword) => {
+          newUser.password = hashPassword;
+          if (err) {
+            throw err;
+          }
+          callback(newUser);
+        });
       }
     });
-
-    callback(newUser);
   }
 
   /**
@@ -81,8 +89,17 @@ class UserDAO {
    * @param {notecallback} callback - callback function.
    */
   insert(user, callback) {
-    this.users[user.id] = user;
-    callback(new User(user.username, user.password));
+    const newUser = new User(user.username, user.password);
+
+    // Generate salt and hash password
+    bcrypt.hash(user.password, UserDAO.SALT_ROUNDS, (err, hashPassword) => {
+      newUser.password = hashPassword;
+      if (err) {
+        throw err;
+      }
+      this.users[user.id] = newUser;
+      callback(newUser);
+    });
   }
 
 
@@ -96,18 +113,18 @@ class UserDAO {
   /**
    * Checks if the username and passwords match a user in the database.
    * @param {string} username - The username.
-   * @param {string} password - The password.
+   * @param {string} plainPassword - The password.
    * @param {booleancallback} callback - callback function.
    */
-  checkCredentials(username, password, callback) {
-    let valid = false;
+  checkCredentials(username, plainPassword, callback) {
     Object.values(this.users).forEach((user) => {
-      if (user.username == username && user.password == password) {
-        valid = true;
+      if (user.username === username) {
+        // Check if the password matches
+        bcrypt.compare(plainPassword, user.password, (err, result) => {
+          callback(result);
+        });
       }
     });
-
-    callback(valid);
   }
 }
 

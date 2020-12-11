@@ -14,6 +14,7 @@ router.post('/', (req, res) => {
   const username = req.body.username;
   const password = req.body.password;
 
+  // Validate input
   if (models.User.isValidUsername(username) && models.User.isValidPassword(password)) {
     models.userDAO.insert(new models.User(username, password), (user) => {
       res.send(user);
@@ -27,7 +28,10 @@ router.put('/:username', (req, res) => {
   const username = req.body.username;
   const password = req.body.password;
 
+  // TODO: Check password again
+
   if (models.User.isValidUsername(username) && models.User.isValidPassword(password)) {
+    // Generate salt and hash password
     models.userDAO.update(new models.User(username, password), (user) => {
       res.send(user);
     });
