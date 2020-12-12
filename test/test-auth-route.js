@@ -15,14 +15,14 @@ const it = mocha.it;
 describe('Auth Route Test Set', () => {
   let user = null;
   mocha.beforeEach((next) => {
-    models.userDAO.insert(new models.User('tester', 'tester-pass'), (newUser) => {
+    models.userDAO.insert(new models.User('Auth Tester' + Date.now(), 'tester-pass'), (newUser) => {
       user = newUser;
       next();
     });
   });
 
   mocha.afterEach((next) => {
-    models.userDAO.delete(user, (deletedUser) => {
+    models.userDAO.delete(user.username, (deletedUser) => {
       next();
     });
   });
@@ -48,10 +48,5 @@ describe('Auth Route Test Set', () => {
           res.body.should.not.have.property('password');
           done();
         });
-  });
-
-  mocha.after((done) => {
-    app.server.close();
-    done();
   });
 });

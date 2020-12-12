@@ -8,7 +8,7 @@ const CREATE_SQL = `CREATE DATABASE ${config.database.database};
                     USE ${config.database.database};
                     CREATE TABLE user(
                       username VARCHAR(40),
-                      password VARCHAR(40),
+                      password VARCHAR(60),
                       PRIMARY KEY(username)
                     );
                     `;
@@ -16,7 +16,7 @@ const CREATE_SQL = `CREATE DATABASE ${config.database.database};
 /**
  * Creates the database if it does not exist.
  */
-const checkAndSetupDb = async () => {
+const configDb = async () => {
   const db = config.database.database;
   delete config.database.database;
   config.database.multipleStatements = true;
@@ -45,4 +45,4 @@ const checkAndSetupDb = async () => {
   });
 };
 
-export default checkAndSetupDb;
+export default configDb;

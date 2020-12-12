@@ -3,8 +3,8 @@ import express from 'express';
 
 const router = express();
 
-router.get('/:usersame', (req, res) => {
-  models.userDAO.read(req.params.userId, (user) => {
+router.get('/:username', (req, res) => {
+  models.userDAO.read(req.params.username, (user) => {
     delete user.password;
     res.send(user);
   });
@@ -17,6 +17,7 @@ router.post('/', (req, res) => {
   // Validate input
   if (models.User.isValidUsername(username) && models.User.isValidPassword(password)) {
     models.userDAO.insert(new models.User(username, password), (user) => {
+      delete user.password;
       res.send(user);
     });
   } else {
@@ -33,6 +34,7 @@ router.put('/:username', (req, res) => {
   if (models.User.isValidUsername(username) && models.User.isValidPassword(password)) {
     // Generate salt and hash password
     models.userDAO.update(new models.User(username, password), (user) => {
+      delete user.password;
       res.send(user);
     });
   } else {
@@ -42,8 +44,11 @@ router.put('/:username', (req, res) => {
 
 router.delete('/:username', (req, res) => {
   const username = req.params.username;
-  models.userDAO.delete(username, (user) => {
-    res.send(user);
+
+  // TODO: Check password again
+
+  models.userDAO.delete(username, (success) => {
+    res.send(success);
   });
 });
 

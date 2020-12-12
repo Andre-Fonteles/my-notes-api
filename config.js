@@ -1,6 +1,7 @@
 const config = {};
 if (process.env.NODE_ENV && process.env.NODE_ENV == 'test') { // Test configuration
   config.database = {
+    connectionLimit: 10,
     host: 'localhost',
     user: 'root',
     password: 'root',
@@ -8,6 +9,7 @@ if (process.env.NODE_ENV && process.env.NODE_ENV == 'test') { // Test configurat
   };
 } else { // Normal configuration
   config.database = {
+    connectionLimit: 10,
     host: 'localhost',
     user: 'root',
     password: 'root',

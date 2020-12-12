@@ -15,14 +15,14 @@ const it = mocha.it;
 describe('Token/Login Route Test Set', () => {
   let user = null;
   mocha.beforeEach((next) => {
-    user = new models.User('john', 'pass');
+    user = new models.User('Login-Tester', 'pass');
     models.userDAO.insert(user, (newUser) => {
       next();
     });
   });
 
   mocha.afterEach((next) => {
-    models.userDAO.delete(user.username, (deletedUser) => {
+    models.userDAO.delete(user.username, (deleted) => {
       next();
     });
   });
@@ -75,10 +75,5 @@ describe('Token/Login Route Test Set', () => {
           res.body.should.be.a('boolean').eql(false);
           done();
         });
-  });
-
-  mocha.after((done) => {
-    app.server.close();
-    done();
   });
 });

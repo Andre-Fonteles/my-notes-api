@@ -1,10 +1,10 @@
 import express from 'express';
 import routes from './routes/index.js';
-import checkAndSetupDb from './utils/DBSetuper.js';
+import configDb from './utils/initdb.js';
 
 const app = express();
 
-checkAndSetupDb().then(() => { // Make sure the DB is set up before anything else
+configDb().then(() => { // Make sure the DB is set up before anything else
   const port = 3000;
   app.use(express.json());
   app.use(express.urlencoded({extended: true}));
@@ -16,7 +16,6 @@ checkAndSetupDb().then(() => { // Make sure the DB is set up before anything els
   app.use('/login', routes.login);
   app.use('/users/:username/notes', routes.notes);
   app.use('/users', routes.users);
-
 
   app.server = app.listen(port, () => {
     console.log(`Example app listening at http://localhost:${port}`);

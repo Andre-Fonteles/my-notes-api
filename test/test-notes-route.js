@@ -17,12 +17,18 @@ describe('Notes Route Test Set', () => {
   let user = null;
   let token = null;
   mocha.before((next) => {
-    models.userDAO.insert(new models.User('tester', 'tester-pass'), (newUser) => {
+    models.userDAO.insert(new models.User('Note-Tester' + Date.now(), 'tester-pass'), (newUser) => {
       user = newUser;
       models.tokenDAO.insert(models.Token.generateToken(user.username), (newToken) => {
         token = newToken;
         next();
       });
+    });
+  });
+
+  mocha.after((done) => {
+    models.userDAO.delete(user.username, (deletedUser) => {
+      done();
     });
   });
 
@@ -203,10 +209,5 @@ describe('Notes Route Test Set', () => {
             done();
           });
     });
-  });
-
-  mocha.after((done) => {
-    app.server.close();
-    done();
   });
 });
