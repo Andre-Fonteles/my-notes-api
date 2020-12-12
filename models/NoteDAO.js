@@ -1,4 +1,5 @@
 import Note from './Note.js';
+import pool from '../utils/pool.js';
 
 /**
  * Represents an interface the handles persistency of a Note.
@@ -9,87 +10,154 @@ class NoteDAO {
    * @constructor
    */
   constructor() {
-    this.notes = [];
-    this.notes[1] = new Note(1, 'Hello, this is a note', 'admin');
-    this.notes[2] = new Note(2, 'Remember to learn NodeJS/Express', 'admin');
-    this.notes[3] = new Note(3, 'Remember to learn React', 'admin');
   }
 
   /**
-   * Retrieves all notes from the database.
-   * @return {Array} notes - An array containing all notes.
+   * Callback for getting a list of notes.
+   *
+   * @callback listcallback
+   * @param {Array} notes - An array containing all notes.
    */
-  readAll() {
-    const array = [];
-    Object.values(this.notes).forEach((n) => {
-      array.push(n);
+
+  /**
+   * Retrieves all notes from an author.
+   * @param {string} username - The username of the author.
+   * @param {listcallback} callback - callback function
+   */
+  readAll(username, callback) {
+    const notes = [];
+
+    pool.query('SELECT * FROM note WHERE username = ?', [username], (error, results, fields) => {
+      if (error) {
+        throw error;
+      }
+      for (let i = 0; results[i]; i++) {
+        notes.push(new Note(parseInt(results[i].id), results[i].username, results[i].content));
+      }
+      callback(notes);
     });
-    return array;
   }
+
+  /**
+   * Callback for getting a note.
+   *
+   * @callback notecallback
+   * @param {Note} note - The note read/created/updated or null if nothing happened.
+   */
 
   /**
    * Retrieves the note with the id.
    * @param {int} id - The id of the note to be retrieved.
-   * @return {Note} The note with id passed or null if no note exists.
+   * @param {string} username - The username of the author.
+   * @param {notecallback} callback - callback function.
    */
-  read(id) {
-    let note = null;
-    if (this.notes[id] !== undefined) {
-      note = this.notes[id];
-    }
-
-    return note;
+  read(id, username, callback) {
+    pool.query('SELECT * FROM note WHERE id = ? AND username = ?', [id, username], (error, results, fields) => {
+      if (error) {
+        throw error;
+      }
+      if (results[0]) {
+        callback(new Note(parseInt(results[0].id), results[0].username, results[0].content));
+      } else {
+        callback(null);
+      }
+    });
   }
 
   /**
    * Deletes the note with the id.
    * @param {int} id - The id of the note to be deleted.
-   * @return {Note} The note with id passed or null if no note exists.
+   * @param {string} username - The username of the author.
+   * @param {booleancallback} callback - callback function.
    */
-  delete(id) {
-    const notes = [];
-    let note = null;
+  delete(id, username, callback) {
+    const sql = 'DELETE FROM note WHERE id = ? AND username = ?';
 
-    Object.values(this.notes).forEach((value) => {
-      if (id != value.id) {
-        notes[value.id] = value;
-      } else {
-        note = value;
+    // Generate salt and hash password
+    pool.query(sql, [id, username], (error, results, fields) => {
+      if (error) {
+        throw error;
       }
+      callback(results.affectedRows > 0);
     });
-    this.notes = notes;
+  }
 
-    return note;
+
+  /**
+   * Callback for operation.
+   *
+   * @callback booleancallback
+   * @param {boolean} bool - True if the operation has been successful.
+   */
+
+  /**
+   * Deletes all notes from a user.
+   * @param {string} username - The username of the author.
+   * @param {booleancallback} callback - callback function.
+   */
+  deleteAll(username, callback) {
+    const sql = 'DELETE FROM note WHERE username = ?';
+
+    // Generate salt and hash password
+    pool.query(sql, [username], (error, results, fields) => {
+      if (error) {
+        throw error;
+      }
+      callback(results.affectedRows > 0);
+    });
   }
 
   /**
    * Updates a note having the id of the note passed according to the values of the latter.
    * @param {Note} note - Note containing the id and the new values.
-   * @return {Note} The note with the updated values or null if the note doesn't exist.
+   * @param {string} username - The username of the author.
+   * @param {notecallback} callback - callback function.
    */
-  update(note) {
-    let newNote = null;
+  update(note, username, callback) {
+    const sql = 'UPDATE note SET content = ? WHERE id = ? AND username = ?';
 
-    Object.values(this.notes).forEach((value) => {
-      if (note.id == value.id) {
-        newNote = value;
-        newNote.content = note.content;
-        newNote.username = note.username;
+    // Generate salt and hash password
+    pool.query(sql, [note.content, note.id, note.username], (error, results, fields) => {
+      if (error) {
+        throw error;
+      }
+
+      if (results.changedRows > 0) {
+        callback(note);
+      } else {
+        callback(null);
       }
     });
-
-    return newNote;
   }
 
   /**
    * Persists a note.
    * @param {Note} note - Note to be persisted.
-   * @return {Note} note - The note persisted.
+   * @param {notecallback} callback - callback function.
    */
-  insert(note) {
-    note.id = this.notes.length;
-    this.notes[note.id] = note;
-    return note;
+  insert(note, callback) {
+    const sql = 'INSERT INTO note (username, content) VALUES (?, ?)';
+    const sqlLastInsert = 'SELECT LAST_INSERT_ID() as noteId';
+
+    pool.getConnection((error, connection) => {
+      if (error) {
+        throw error;
+      }
+
+      connection.query(sql, [note.username, note.content], (error, results, fields) => {
+        if (error) {
+          throw error;
+        }
+        connection.query(sqlLastInsert, (error, results, fields) => {
+          if (error) {
+            throw error;
+          }
+          note.id = parseInt(results[0].noteId);
+          callback(note);
+          connection.release();
+        });
+      });
+    });
   }
 }
 

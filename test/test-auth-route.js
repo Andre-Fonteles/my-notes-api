@@ -15,14 +15,16 @@ const it = mocha.it;
 describe('Auth Route Test Set', () => {
   let user = null;
   mocha.beforeEach((next) => {
-    user = new models.User('john', 'pass');
-    user = models.userDAO.insert(user);
-    next();
+    models.userDAO.insert(new models.User('Auth Tester' + Date.now(), 'tester-pass'), (newUser) => {
+      user = newUser;
+      next();
+    });
   });
 
   mocha.afterEach((next) => {
-    models.userDAO.delete(user);
-    next();
+    models.userDAO.delete(user.username, (deletedUser) => {
+      next();
+    });
   });
 
   it('/GET some resource from a user with no token', (done) => {
@@ -39,7 +41,7 @@ describe('Auth Route Test Set', () => {
   it('/GET some resource from a user with a wrong token', (done) => {
     chai.request(app)
         .get(`/users/${user.username}`)
-        .set('Authorization', 'wrong-token')
+        .set('authorization', 'wrong-token')
         .end((err, res) => {
           res.should.have.status(401);
           res.body.should.not.have.property('username');
@@ -48,8 +50,14 @@ describe('Auth Route Test Set', () => {
         });
   });
 
-  mocha.after((done) => {
-    app.server.close();
-    done();
+  it('/GET some resource from a user with no token', (done) => {
+    chai.request(app)
+        .get(`/users/${user.username}/notes`)
+        .end((err, res) => {
+          res.should.have.status(401);
+          res.body.should.not.have.property('username');
+          res.body.should.not.have.property('password');
+          done();
+        });
   });
 });

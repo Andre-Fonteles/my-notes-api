@@ -17,21 +17,29 @@ describe('Notes Route Test Set', () => {
   let user = null;
   let token = null;
   mocha.before((next) => {
-    user = models.userDAO.insert(new models.User('tester', 'tester-pass'));
-    token = models.tokenDAO.insert(models.Token.generateToken(user.username));
-    next();
+    models.userDAO.insert(new models.User('Note-Tester' + Date.now(), 'tester-pass'), (newUser) => {
+      user = newUser;
+      models.tokenDAO.insert(models.Token.generateToken(user.username), (newToken) => {
+        token = newToken;
+        next();
+      });
+    });
+  });
+
+  mocha.after((done) => {
+    models.userDAO.delete(user.username, (deletedUser) => {
+      done();
+    });
   });
 
   /*
   * Test HTTP requests on a dataset with no notes
   */
-  describe('With an empty dataset:', () => {
+  describe('For a user with no notes:', () => {
     const cleanDataset = (done) => {
-      const notes = models.noteDAO.readAll();
-      Object.values(notes).forEach((note) => {
-        models.noteDAO.delete(note.id);
+      models.noteDAO.deleteAll(user.username, (success) => {
+        done();
       });
-      done();
     };
 
     // Before each test, empty the data base
@@ -67,7 +75,7 @@ describe('Notes Route Test Set', () => {
           .set('Authorization', token.hash)
           .end((err, res) => {
             res.should.have.status(200);
-            res.body.should.be.empty;
+            res.body.should.be.a('boolean').eql(false);
             done();
           });
     });
@@ -120,18 +128,18 @@ describe('Notes Route Test Set', () => {
   * Test HTTP requests on populated dataset
   */
   describe('With a populated dataset:', () => {
+    let note = null;
+
     // Before the test start, populate data base
-    mocha.before((done) => {
-      for (let i = 1; i <= 10; i++) {
-        models.noteDAO.insert(new Note(i, 'This is my note #' + i));
-      }
-      done();
+    mocha.beforeEach((done) => {
+      note = new Note(-1, user.username, 'This is my note #1');
+      models.noteDAO.insert(note, (noteCreated) => {
+        note = noteCreated;
+        done();
+      });
     });
 
     it('/GET all notes', (done) => {
-      let note = new models.Note(1, user.username, 'I should test more');
-      note = models.noteDAO.insert(note);
-
       chai.request(app)
           .get(`/users/${user.username}/notes`)
           .set('Authorization', token.hash)
@@ -144,9 +152,6 @@ describe('Notes Route Test Set', () => {
     });
 
     it('/GET a note by id', (done) => {
-      let note = new models.Note(1, user.username, 'I should test more');
-      note = models.noteDAO.insert(note);
-
       chai.request(app)
           .get(`/users/${user.username}/notes/${note.id}`)
           .set('Authorization', token.hash)
@@ -161,25 +166,18 @@ describe('Notes Route Test Set', () => {
     });
 
     it('/DELETE a note by id', (done) => {
-      let note = new models.Note(1, user.username, 'I should test more');
-      note = models.noteDAO.insert(note);
-
       chai.request(app)
           .delete(`/users/${user.username}/notes/${note.id}`)
           .set('Authorization', token.hash)
           .end((err, res) => {
             res.should.have.status(200);
             res.should.be.an('object');
-            res.body.should.have.property('content').eql(note.content);
-            res.body.should.have.property('username').eql(user.username);
-            res.body.should.have.property('id').eql(note.id);
+            res.body.should.be.a('boolean').eql(true);
             done();
           });
     });
 
     it('/PUT (update) a note', (done) => {
-      let note = new models.Note(-1, user.username, 'I should test more');
-      note = models.noteDAO.insert(note);
       note.content = 'New content';
 
       chai.request(app)
@@ -197,7 +195,6 @@ describe('Notes Route Test Set', () => {
     });
 
     it('/POST (create) a note', (done) => {
-      const note = new models.Note(1, user.username, 'I should test more');
       chai.request(app)
           .post(`/users/${user.username}/notes`)
           .set('Authorization', token.hash)
@@ -210,10 +207,5 @@ describe('Notes Route Test Set', () => {
             done();
           });
     });
-  });
-
-  mocha.after((done) => {
-    app.server.close();
-    done();
   });
 });

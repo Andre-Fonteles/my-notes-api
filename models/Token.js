@@ -25,7 +25,7 @@ class Token {
    */
   static generateToken(username) {
     const hash = crypto.randomBytes(64).toString('hex');
-    const date = Date.now();
+    const date = new Date();
     return new Token(username, hash, date);
   }
 }

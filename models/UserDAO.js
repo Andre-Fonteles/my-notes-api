@@ -1,106 +1,134 @@
 import User from './User.js';
+import bcrypt from 'bcrypt';
+import pool from '../utils/pool.js';
 
 /**
  * Represents an interface the handles persistency of a User.
  */
 class UserDAO {
+  static SALT_ROUNDS = 10;
+
   /**
    * Creates a UserDAO.
    * @constructor
    */
   constructor() {
-    this.users = {};
-    this.users[1] = new User('admin', 'admin');
-    this.users[2] = new User('admin2', 'admin3');
-    this.users[3] = new User('admin3', 'admin3');
   }
 
   /**
-   * Retrieves all users from the database.
-   * @return {Array} users - An array containing all users.
+   * Callback for getting a note.
+   *
+   * @callback usercallback
+   * @param {User} user - The user read/created/updated or null if nothing happened.
    */
-  readAll() {
-    return this.users;
-  }
 
   /**
    * Retrieves the user with the username.
    * @param {string} username - The username of the user to be retrieved.
-   * @return {User} The user with id passed or null if no note exists.
+   * @param {notecallback} callback - callback function.
    */
-  read(username) {
-    let user = undefined;
-    if (this.users[username] !== undefined) {
-      user = this.users[username];
-    }
-
-    return user;
+  read(username, callback) {
+    pool.query('SELECT * FROM user WHERE username = ?', [username], (error, results, fields) => {
+      if (error) {
+        throw error;
+      }
+      if (results[0]) {
+        callback(new User(results[0].username, results[0].password));
+      } else {
+        callback(null);
+      }
+    });
   }
+
+  /**
+   * Callback for operation.
+   *
+   * @callback booleancallback
+   * @param {boolean} bool - True if the operation has been successful.
+   */
 
   /**
    * Deletes the user with the username.
    * @param {string} username - The username of the user to be deleted.
-   * @return {User} The user with username passed or null if no user exists.
+   * @param {booleancallback} callback - callback function.
    */
-  delete(username) {
-    const users = [];
-    let user = null;
+  delete(username, callback) {
+    const sql = 'DELETE FROM user WHERE username = ?';
 
-    Object.values(this.users).forEach((value) => {
-      if (username != value.username) {
-        users[value.username] = value;
-      } else {
-        user = value;
+    // Generate salt and hash password
+    pool.query(sql, [username], (error, results, fields) => {
+      if (error) {
+        throw error;
       }
+      callback(results.affectedRows > 0);
     });
-    this.users = users;
-
-    return user;
   }
 
   /**
    * Updates a user having the username of the user passed according to the values of the latter.
    * @param {User} user - User containing the username and the new values.
-   * @return {User} The user with the updated values or null if the user doesn't exist.
+   * @param {notecallback} callback - callback function.
    */
-  update(user) {
-    let newUser = null;
+  update(user, callback) {
+    const sql = 'UPDATE user SET password = ? WHERE username = ?';
 
-    Object.values(this.users).forEach((value) => {
-      if (user.username == value.username) {
-        newUser = value;
-        newUser.password = user.password;
+    const updatedUser = new User(user.username, '');
+
+    // Generate salt and hash password
+    bcrypt.hash(user.password, UserDAO.SALT_ROUNDS, (err, hashPassword) => {
+      if (err) {
+        throw err;
       }
-    });
+      pool.query(sql, [hashPassword, user.username], (error, results, fields) => {
+        if (error) {
+          throw error;
+        }
 
-    return newUser;
+        if (results.changedRows > 0) {
+          callback(updatedUser);
+        } else {
+          callback(null);
+        }
+      });
+    });
   }
 
   /**
    * Persists a user.
    * @param {User} user - User to be persisted.
-   * @return {User} The user persisted.
+   * @param {notecallback} callback - callback function.
    */
-  insert(user) {
-    this.users[user.id] = user;
-    return new User(user.username, user.password);
+  insert(user, callback) {
+    const sql = 'INSERT INTO user (username, password) VALUES (?, ?)';
+
+    const newUser = new User(user.username, '');
+
+    // Generate salt and hash password
+    bcrypt.hash(user.password, UserDAO.SALT_ROUNDS, (err, hashPassword) => {
+      if (err) {
+        throw err;
+      }
+      pool.query(sql, [user.username, hashPassword], (error, results, fields) => {
+        if (error) {
+          throw error;
+        }
+        callback(newUser);
+      });
+    });
   }
 
   /**
    * Checks if the username and passwords match a user in the database.
    * @param {string} username - The username.
-   * @param {string} password - The password.
-   * @return {boolean} true if the username and password match a user.
+   * @param {string} plainPassword - The password.
+   * @param {booleancallback} callback - callback function.
    */
-  checkCredentials(username, password) {
-    let valid = false;
-    Object.values(this.users).forEach((user) => {
-      if (user.username == username && user.password == password) {
-        valid = true;
-      }
+  checkCredentials(username, plainPassword, callback) {
+    this.read(username, (user) => {
+      bcrypt.compare(plainPassword, user.password, (err, result) => {
+        callback(result);
+      });
     });
-
-    return valid;
   }
 }
 

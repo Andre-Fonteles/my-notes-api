@@ -15,14 +15,16 @@ const it = mocha.it;
 describe('Token/Login Route Test Set', () => {
   let user = null;
   mocha.beforeEach((next) => {
-    user = new models.User('john', 'pass');
-    user = models.userDAO.insert(user);
-    next();
+    user = new models.User('Login-Tester', 'pass');
+    models.userDAO.insert(user, (newUser) => {
+      next();
+    });
   });
 
   mocha.afterEach((next) => {
-    models.userDAO.delete(user);
-    next();
+    models.userDAO.delete(user.username, (deleted) => {
+      next();
+    });
   });
 
   it('/POST a user (login)', (done) => {
@@ -50,16 +52,17 @@ describe('Token/Login Route Test Set', () => {
   });
 
   it('/DELETE token (logout)', (done) => {
-    const token = models.tokenDAO.insert(models.Token.generateToken(user.username));
-    chai.request(app)
-        .delete('/login')
-        .send(user)
-        .set('Authorization', token.hash)
-        .end((err, res) => {
-          res.should.have.status(200);
-          res.body.should.be.a('boolean').eql(true);
-          done();
-        });
+    models.tokenDAO.insert(models.Token.generateToken(user.username), (token) => {
+      chai.request(app)
+          .delete('/login')
+          .send(user)
+          .set('Authorization', token.hash)
+          .end((err, res) => {
+            res.should.have.status(200);
+            res.body.should.be.a('boolean').eql(true);
+            done();
+          });
+    });
   });
 
   it('/DELETE non-exiting token', (done) => {
@@ -72,10 +75,5 @@ describe('Token/Login Route Test Set', () => {
           res.body.should.be.a('boolean').eql(false);
           done();
         });
-  });
-
-  mocha.after((done) => {
-    app.server.close();
-    done();
   });
 });

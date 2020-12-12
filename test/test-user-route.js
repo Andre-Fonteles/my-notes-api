@@ -16,14 +16,19 @@ describe('User Route Test Set', () => {
   let user = null;
   let token = null;
   mocha.beforeEach((next) => {
-    user = models.userDAO.insert(new models.User('tester', 'tester-pass'));
-    token = models.tokenDAO.insert(models.Token.generateToken(user.username));
-    next();
+    models.userDAO.insert(new models.User('User-Tester' + Date.now(), 'tester-pass'), (newUser) => {
+      user = newUser;
+      models.tokenDAO.insert(models.Token.generateToken(user.username), (newToken) => {
+        token = newToken;
+        next();
+      });
+    });
   });
 
-  mocha.after((next) => {
-    models.userDAO.delete(user);
-    next();
+  mocha.afterEach((next) => {
+    models.userDAO.delete(user.username, (deletedUser) => {
+      next();
+    });
   });
 
   it('/GET a user by username', (done) => {
@@ -45,56 +50,69 @@ describe('User Route Test Set', () => {
         .set('Authorization', token.hash)
         .end((err, res) => {
           res.should.have.status(200);
+          console.log(JSON.stringify(res.body));
           res.should.be.an('object');
-          res.body.should.have.property('password').eql(user.password);
-          res.body.should.have.property('username').eql(user.username);
+          res.body.should.be.an('boolean').eql(true);
           done();
         });
   });
 
   it('/PUT (update) a user', (done) => {
-    user.password = 'New password';
+    const userToUpdate = new models.User(user.username, 'New password');
 
     chai.request(app)
         .put(`/users/${user.username}`)
         .set('Authorization', token.hash)
-        .send(user)
+        .send(userToUpdate)
         .end((err, res) => {
           res.should.have.status(200);
           res.should.be.an('object');
-          res.body.should.have.property('password').eql(user.password);
-          res.body.should.have.property('username').eql(user.username);
-          done();
-        });
-  });
-
-  it('/POST (create) a user', (done) => {
-    chai.request(app)
-        .post('/users')
-        .send(user)
-        .end((err, res) => {
-          res.should.have.status(200);
-          res.should.be.an('object');
-          res.body.should.have.property('password').eql(user.password);
-          done();
-        });
-  });
-
-  it('/POST (create) an invalid user', (done) => {
-    delete user.password;
-    chai.request(app)
-        .post('/users')
-        .send(user)
-        .end((err, res) => {
-          res.should.have.status(400);
-          res.body.should.not.have.property('username');
           res.body.should.not.have.property('password');
-          done();
+          res.body.should.have.property('username').eql(user.username);
+          models.userDAO.checkCredentials(userToUpdate.username, userToUpdate.password, (result) => {
+            chai.expect(result).to.eql(true);
+            done();
+          });
         });
   });
 
-  mocha.after((done) => {
-    app.server.close();
-    done();
+  describe('Creating user', () => {
+    let userToPost = null;
+
+    mocha.beforeEach((next) => {
+      userToPost = new models.User('User-Tester-Post', 'tester-pass');
+      next();
+    });
+
+    mocha.after((done) => {
+      models.userDAO.delete(userToPost.username, (deletedUser) => {
+        done();
+      });
+    });
+
+    it('/POST a valid user', (done) => {
+      chai.request(app)
+          .post('/users')
+          .send(userToPost)
+          .end((err, res) => {
+            res.should.have.status(200);
+            res.should.be.an('object');
+            res.body.should.not.have.property('password');
+            done();
+          });
+    });
+
+    it('/POST an invalid user', (done) => {
+      delete userToPost.password;
+      chai.request(app)
+          .post('/users')
+          .send(userToPost)
+          .end((err, res) => {
+            res.should.have.status(400);
+            res.body.should.not.have.property('username');
+            res.body.should.not.have.property('password');
+            done();
+          });
+    });
   });
 });
