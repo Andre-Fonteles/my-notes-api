@@ -75,7 +75,7 @@ describe('Notes Route Test Set', () => {
           .set('Authorization', token.hash)
           .end((err, res) => {
             res.should.have.status(200);
-            res.body.should.be.empty;
+            res.body.should.be.a('boolean').eql(false);
             done();
           });
     });
@@ -172,9 +172,7 @@ describe('Notes Route Test Set', () => {
           .end((err, res) => {
             res.should.have.status(200);
             res.should.be.an('object');
-            res.body.should.have.property('content').eql(note.content);
-            res.body.should.have.property('username').eql(user.username);
-            res.body.should.have.property('id').eql(note.id);
+            res.body.should.be.a('boolean').eql(true);
             done();
           });
     });

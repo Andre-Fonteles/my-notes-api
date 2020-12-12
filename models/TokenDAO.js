@@ -1,4 +1,4 @@
-import Token from './Token.js';
+import pool from '../utils/pool.js';
 
 /**
  * Represents an interface the handles persistency of a Note.
@@ -9,10 +9,6 @@ class TokenDAO {
    * @constructor
    */
   constructor() {
-    this.tokens = [];
-    this.tokens[1] = new Token('admin', 'asd', Date.now());
-    this.tokens[2] = new Token('admin', 'zxc', Date.now());
-    this.tokens[3] = new Token('admin', 'qwe', Date.now());
   }
 
   /**
@@ -29,14 +25,14 @@ class TokenDAO {
    * @param {booleancallback} callback - callback function.
    */
   checkToken(username, tokenHash, callback) {
-    let auth = false;
-    this.tokens.forEach( (token) => {
-      if (token.username == username && token.hash == tokenHash) {
-        auth = true;
+    const sql = 'SELECT * FROM token WHERE username = ? AND hash = ?';
+    pool.query(sql, [username, tokenHash], (error, results, fields) => {
+      if (error) {
+        throw error;
       }
-    });
 
-    callback(auth);
+      callback(results.length > 0);
+    });
   }
 
   /**
@@ -53,19 +49,15 @@ class TokenDAO {
    * @param {booleancallback} callback - callback function.
    */
   delete(username, tokenHash, callback) {
-    const tokens = [];
-    let deleted = false;
+    const sql = 'DELETE FROM token WHERE username = ? AND hash = ?';
 
-    Object.values(this.tokens).forEach((token) => {
-      if (token.username != username || token.hash != tokenHash) {
-        tokens.push(token);
-      } else {
-        deleted = true;
+    // Generate salt and hash password
+    pool.query(sql, [username, tokenHash], (error, results, fields) => {
+      if (error) {
+        throw error;
       }
+      callback(results.affectedRows > 0);
     });
-    this.tokens = tokens;
-
-    callback(deleted);
   }
 
   /**
@@ -74,8 +66,14 @@ class TokenDAO {
    * @param {tokencallback} callback - callback function.
    */
   insert(token, callback) {
-    this.tokens.push(token);
-    callback(token);
+    const sql = 'INSERT INTO token (username, hash, creation_date) VALUES (?, ?, ?)';
+
+    pool.query(sql, [token.username, token.hash, token.creationDate], (error, results, fields) => {
+      if (error) {
+        throw error;
+      }
+      callback(token);
+    });
   }
 }
 

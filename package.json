@@ -5,7 +5,7 @@
   "main": "index.js",
   "type": "module",
   "scripts": {
-    "test": "mocha ./test ",
+    "test": "NODE_ENV=test mocha ./test ",
     "lint": "eslint .",
     "lint-fix": "npm run lint -- --fix",
     "pretest": "npm run lint"
@@ -17,7 +17,8 @@
     "bcrypt": "^5.0.0",
     "chai-things": "^0.2.0",
     "express": "^4.17.1",
-    "mysql": "^2.18.1"
+    "mysql": "^2.18.1",
+    "promise": "^8.1.0"
   },
   "devDependencies": {
     "@babel/cli": "^7.12.8",

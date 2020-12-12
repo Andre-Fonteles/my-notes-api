@@ -41,7 +41,7 @@ router.put('/:noteId', (req, res) => {
   const id = req.params.noteId;
   const content = req.body.content;
   const username = req.params.username;
-  const updatedNote = new models.Note(id, username, content);
+  const updatedNote = new models.Note(parseInt(id), username, content);
 
   models.noteDAO.update(updatedNote, username, (note) => {
     res.send(note);

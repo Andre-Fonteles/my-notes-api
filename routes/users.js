@@ -5,7 +5,9 @@ const router = express();
 
 router.get('/:username', (req, res) => {
   models.userDAO.read(req.params.username, (user) => {
-    delete user.password;
+    if (user) {
+      delete user.password;
+    }
     res.send(user);
   });
 });

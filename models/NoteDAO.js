@@ -1,4 +1,5 @@
 import Note from './Note.js';
+import pool from '../utils/pool.js';
 
 /**
  * Represents an interface the handles persistency of a Note.
@@ -9,10 +10,6 @@ class NoteDAO {
    * @constructor
    */
   constructor() {
-    this.notes = [];
-    this.notes[1] = new Note(1, 'Hello, this is a note', 'admin');
-    this.notes[2] = new Note(2, 'Remember to learn NodeJS/Express', 'admin');
-    this.notes[3] = new Note(3, 'Remember to learn React', 'admin');
   }
 
   /**
@@ -28,13 +25,17 @@ class NoteDAO {
    * @param {listcallback} callback - callback function
    */
   readAll(username, callback) {
-    const array = [];
-    Object.values(this.notes).forEach((n) => {
-      if (n.username === username) {
-        array.push(n);
+    const notes = [];
+
+    pool.query('SELECT * FROM note WHERE username = ?', [username], (error, results, fields) => {
+      if (error) {
+        throw error;
       }
+      for (let i = 0; results[i]; i++) {
+        notes.push(new Note(parseInt(results[i].id), results[i].username, results[i].content));
+      }
+      callback(notes);
     });
-    callback(array);
   }
 
   /**
@@ -51,34 +52,34 @@ class NoteDAO {
    * @param {notecallback} callback - callback function.
    */
   read(id, username, callback) {
-    let note = null;
-    if (this.notes[id] !== undefined && this.notes[id].username === username) {
-      note = this.notes[id];
-    }
-
-    callback(note);
+    pool.query('SELECT * FROM note WHERE id = ? AND username = ?', [id, username], (error, results, fields) => {
+      if (error) {
+        throw error;
+      }
+      if (results[0]) {
+        callback(new Note(parseInt(results[0].id), results[0].username, results[0].content));
+      } else {
+        callback(null);
+      }
+    });
   }
 
   /**
    * Deletes the note with the id.
    * @param {int} id - The id of the note to be deleted.
    * @param {string} username - The username of the author.
-   * @param {notecallback} callback - callback function.
+   * @param {booleancallback} callback - callback function.
    */
   delete(id, username, callback) {
-    const notes = [];
-    let note = null;
+    const sql = 'DELETE FROM note WHERE id = ? AND username = ?';
 
-    Object.values(this.notes).forEach((value) => {
-      if (id != value.id || value.username != username) {
-        notes[value.id] = value;
-      } else {
-        note = value;
+    // Generate salt and hash password
+    pool.query(sql, [id, username], (error, results, fields) => {
+      if (error) {
+        throw error;
       }
+      callback(results.affectedRows > 0);
     });
-    this.notes = notes;
-
-    callback(note);
   }
 
 
@@ -95,19 +96,15 @@ class NoteDAO {
    * @param {booleancallback} callback - callback function.
    */
   deleteAll(username, callback) {
-    const notes = [];
-    let response = false;
+    const sql = 'DELETE FROM note WHERE username = ?';
 
-    Object.values(this.notes).forEach((value) => {
-      if (username != value.username) {
-        notes[value.id] = value;
-      } else {
-        response = true;
+    // Generate salt and hash password
+    pool.query(sql, [username], (error, results, fields) => {
+      if (error) {
+        throw error;
       }
+      callback(results.affectedRows > 0);
     });
-    this.notes = notes;
-
-    callback(response);
   }
 
   /**
@@ -117,17 +114,20 @@ class NoteDAO {
    * @param {notecallback} callback - callback function.
    */
   update(note, username, callback) {
-    let newNote = null;
+    const sql = 'UPDATE note SET content = ? WHERE id = ? AND username = ?';
 
-    Object.values(this.notes).forEach((value) => {
-      if (note.id == value.id && username === value.username) {
-        newNote = value;
-        newNote.content = note.content;
-        newNote.username = note.username;
+    // Generate salt and hash password
+    pool.query(sql, [note.content, note.id, note.username], (error, results, fields) => {
+      if (error) {
+        throw error;
+      }
+
+      if (results.changedRows > 0) {
+        callback(note);
+      } else {
+        callback(null);
       }
     });
-
-    callback(newNote);
   }
 
   /**
@@ -136,9 +136,28 @@ class NoteDAO {
    * @param {notecallback} callback - callback function.
    */
   insert(note, callback) {
-    note.id = this.notes.length;
-    this.notes[note.id] = note;
-    callback(note);
+    const sql = 'INSERT INTO note (username, content) VALUES (?, ?)';
+    const sqlLastInsert = 'SELECT LAST_INSERT_ID() as noteId';
+
+    pool.getConnection((error, connection) => {
+      if (error) {
+        throw error;
+      }
+
+      connection.query(sql, [note.username, note.content], (error, results, fields) => {
+        if (error) {
+          throw error;
+        }
+        connection.query(sqlLastInsert, (error, results, fields) => {
+          if (error) {
+            throw error;
+          }
+          note.id = parseInt(results[0].noteId);
+          callback(note);
+          connection.release();
+        });
+      });
+    });
   }
 }
 

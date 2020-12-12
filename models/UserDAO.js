@@ -35,7 +35,7 @@ class UserDAO {
       if (results[0]) {
         callback(new User(results[0].username, results[0].password));
       } else {
-        callback({});
+        callback(null);
       }
     });
   }

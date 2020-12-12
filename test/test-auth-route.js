@@ -41,7 +41,18 @@ describe('Auth Route Test Set', () => {
   it('/GET some resource from a user with a wrong token', (done) => {
     chai.request(app)
         .get(`/users/${user.username}`)
-        .set('Authorization', 'wrong-token')
+        .set('authorization', 'wrong-token')
+        .end((err, res) => {
+          res.should.have.status(401);
+          res.body.should.not.have.property('username');
+          res.body.should.not.have.property('password');
+          done();
+        });
+  });
+
+  it('/GET some resource from a user with no token', (done) => {
+    chai.request(app)
+        .get(`/users/${user.username}/notes`)
         .end((err, res) => {
           res.should.have.status(401);
           res.body.should.not.have.property('username');
