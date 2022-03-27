@@ -1,4 +1,3 @@
-// import models from '../models/index.js';
 import mocha from 'mocha';
 import chai from 'chai';
 import chaiThings from 'chai-things';
@@ -14,7 +13,7 @@ const describe = mocha.describe;
 const it = mocha.it;
 
 describe('Note Model Test Set', () => {
-  it('Testing invalid usernames', (done) => {
+  it('Testing invalid content', (done) => {
     expect(Note.isValidContent('')).to.be.a('boolean').eql(false);
     expect(Note.isValidContent('   ')).to.be.a('boolean').eql(false);
     expect(Note.isValidContent(' ')).to.be.a('boolean').eql(false);
@@ -23,7 +22,7 @@ describe('Note Model Test Set', () => {
     done();
   });
 
-  it('Testing valid usernames', (done) => {
+  it('Testing valid content', (done) => {
     expect(Note.isValidContent('1')).to.be.a('boolean').eql(true);
     expect(Note.isValidContent('normal content')).to.be.a('boolean').eql(true);
     expect(Note.isValidContent('¬!"£$%^&*()_+-=[]{}#~@/?.,<>\\|')).to.be.a('boolean').eql(true);

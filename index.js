@@ -12,6 +12,8 @@ app.setupPromisse = configDb().then(new Promise((resolve, reject) => {
   app.use(express.urlencoded({extended: true}));
   app.use(express.json());
 
+  app.use('/', routes.accessControl);
+
   app.use('/login', routes.login);
 
   app.use('/users/:username', routes.auth);

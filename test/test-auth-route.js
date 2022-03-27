@@ -27,7 +27,7 @@ describe('Auth Route Test Set', () => {
     });
   });
 
-  it('/GET some resource from a user with no token', (done) => {
+  it('/GET some resource from a user using no token', (done) => {
     chai.request(app)
         .get(`/users/${user.username}`)
         .end((err, res) => {
@@ -38,7 +38,7 @@ describe('Auth Route Test Set', () => {
         });
   });
 
-  it('/GET some resource from a user with a wrong token', (done) => {
+  it('/GET some resource from a user using an invalid token', (done) => {
     chai.request(app)
         .get(`/users/${user.username}`)
         .set('authorization', 'wrong-token')
@@ -50,7 +50,7 @@ describe('Auth Route Test Set', () => {
         });
   });
 
-  it('/GET some resource from a user with no token', (done) => {
+  it('/GET some notes from a user using no token', (done) => {
     chai.request(app)
         .get(`/users/${user.username}/notes`)
         .end((err, res) => {
