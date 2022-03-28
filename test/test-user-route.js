@@ -134,6 +134,7 @@ describe('User Route Test Set', () => {
     });
 
     it('/POST a user with already existing username', (done) => {
+      registeredUser.password = password;
       chai.request(app)
           .post('/users')
           .send(registeredUser)

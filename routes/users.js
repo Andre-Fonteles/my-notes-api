@@ -16,15 +16,21 @@ router.post('/', (req, res) => {
   const username = req.body.username;
   const password = req.body.password;
 
-  // Validate input
-  if (models.User.isValidUsername(username) && models.User.isValidPassword(password)) {
-    models.userDAO.insert(new models.User(username, password), (user) => {
-      delete user.password;
-      res.send(user);
-    });
-  } else {
-    res.status(400).send('Invalid Username or password');
-  }
+  models.userDAO.read(username, (user) => {
+    if (user) {
+      res.status(400).send('Username already taken');
+    } else {
+      // Validate input
+      if (models.User.isValidUsername(username) && models.User.isValidPassword(password)) {
+        models.userDAO.insert(new models.User(username, password), (user) => {
+          delete user.password;
+          res.send(user);
+        });
+      } else {
+        res.status(400).send('Invalid Username or password');
+      }
+    }
+  });
 });
 
 router.put('/:username', (req, res) => {
