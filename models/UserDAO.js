@@ -125,9 +125,11 @@ class UserDAO {
    */
   checkCredentials(username, plainPassword, callback) {
     this.read(username, (user) => {
-      bcrypt.compare(plainPassword, user.password, (err, result) => {
-        callback(result);
-      });
+      if (user) {
+        bcrypt.compare(plainPassword, user.password, (err, result) => {
+          callback(result);
+        });
+      }
     });
   }
 }
