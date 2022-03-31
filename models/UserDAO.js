@@ -129,6 +129,8 @@ class UserDAO {
         bcrypt.compare(plainPassword, user.password, (err, result) => {
           callback(result);
         });
+      } else {
+        callback(false);
       }
     });
   }
